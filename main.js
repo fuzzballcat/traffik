@@ -76,19 +76,26 @@ float rand(vec2 n) {
 }
 
 void main() {
-  vec4 inColor = texture2D(source, vTexCoord);
+  vec4 inColor = /*texture2D(source, vTexCoord)*/vec4(0.0, 0.0, 0.0, 0.1);
   gl_FragColor = vec4(inColor.xyz + noiseAmount * (rand(noiseSeed + vTexCoord * 876.321)-0.5), inColor.a);
 }
 `;
 
-function applyGrain(){
+function computeGrain(){
+  grainbuffer = createGraphics(width, height, WEBGL);
+  grainbuffer.rectMode(CENTER)
+  grainbuffer.noStroke();
+  grainshader = grainbuffer.createShader(grainvert, grainfrag);
+
   grainbuffer.clear();
   grainbuffer.shader(grainshader);
-  grainshader.setUniform('noiseSeed', 0);
   grainshader.setUniform('source', maincanvas);
+  grainshader.setUniform('noiseSeed', 0);
   grainshader.setUniform('noiseAmount', 0.2);
   grainbuffer.rect(0, 0, width, height);
-  clear();
+}
+
+function applyGrain(){
   image(grainbuffer, -width/2, -height/2);
 }
 
@@ -96,10 +103,7 @@ function applyGrain(){
 sketch.setup = function(){
   maincanvas = createCanvas(windowWidth, windowHeight);
 
-  grainbuffer = createGraphics(width, height, WEBGL);
-  grainbuffer.rectMode(CENTER)
-  grainbuffer.noStroke();
-  grainshader = grainbuffer.createShader(grainvert, grainfrag);
+  computeGrain();
 
   rectMode(CENTER);
 
@@ -721,9 +725,6 @@ sketch.mouseDragged = function(){
 sketch.windowResized = function(){
   resizeCanvas(windowWidth, windowHeight);
   grainbuffer.remove();
-  grainbuffer = createGraphics(windowWidth, windowHeight, WEBGL);
-  grainbuffer.noStroke();
-  grainbuffer.rectMode(CENTER);
-  grainshader = grainbuffer.createShader(grainvert, grainfrag);
+  computeGrain();
   calculateRoadScale();
 }
