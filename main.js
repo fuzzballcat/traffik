@@ -102,6 +102,7 @@ function applyGrain(){
 
 sketch.setup = function(){
   maincanvas = createCanvas(windowWidth, windowHeight);
+  pixelDensity(1); // make phones not insanely slow
 
   computeGrain();
 
