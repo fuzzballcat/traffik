@@ -1,4 +1,6 @@
-//p5.disableFriendlyErrors = true;
+import { sketch } from 'p5js-wrapper';
+
+p5.disableFriendlyErrors = true;
 
 const GWIDTH = 21;
 const GHEIGHT = 21;
@@ -91,7 +93,7 @@ function applyGrain(){
 }
 
 
-function setup(){
+sketch.setup = function(){
   maincanvas = createCanvas(windowWidth, windowHeight);
 
   grainbuffer = createGraphics(width, height, WEBGL);
@@ -199,7 +201,7 @@ let cars = [];
 let average_dissatisfaction = 0;
 let frame_lost = false;
 
-function draw(){
+sketch.draw = function(){
   let newcars = [];
   for(let c of cars){
     if(c.path.length <= 1 || (c.isdie !== false && c.isdie === 0)) continue;
@@ -689,7 +691,7 @@ function mod(n, m){
 }
 
 let isplacing = false;
-function mousePressed(){
+sketch.mousePressed = function(){
   if(frame_lost !== false) return;
   let gridmouseX = Math.floor((mouseX-width/2)/ROADSIZE-GX_OFFSET+0.5),
       gridmouseY = Math.floor((mouseY-height/2)/ROADSIZE-GY_OFFSET+0.5);
@@ -703,7 +705,7 @@ function mousePressed(){
   updatePaths();
 }
 
-function mouseDragged(){
+sketch.mouseDragged = function(){
   if(frame_lost !== false) return;
   let gridmouseX = Math.floor((mouseX-width/2+1)/ROADSIZE-GX_OFFSET+0.5),
       gridmouseY = Math.floor((mouseY-height/2)/ROADSIZE-GY_OFFSET+0.5);
@@ -716,7 +718,7 @@ function mouseDragged(){
   updatePaths();
 }
 
-function windowResized(){
+sketch.windowResized = function(){
   resizeCanvas(windowWidth, windowHeight);
   grainbuffer.remove();
   grainbuffer = createGraphics(windowWidth, windowHeight, WEBGL);
