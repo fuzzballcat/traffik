@@ -20,7 +20,7 @@ const unavailable_color = [255 * 0.9, 211 * 0.95, 153 * 0.99];
 
 let ROADSIZE, CARX, CARY;
 function calculateRoadScale(){
-  ROADSIZE = Math.round(Math.min(window.innerWidth, window.innerHeight)*2/3 * 1/21);
+  ROADSIZE = Math.round(Math.min(window.innerWidth, window.innerHeight)*2/3 * 1/21 * 1/2)*2+1;
   CARX = ROADSIZE/5*0.9;
   CARY = 2*CARX;
 }
@@ -708,6 +708,7 @@ sketch.mousePressed = function(){
   roadsgrid[xytoi(gridmouseX, gridmouseY)] = !roadsgrid[xytoi(gridmouseX, gridmouseY)];
   isplacing = roadsgrid[xytoi(gridmouseX, gridmouseY)];
   updatePaths();
+  return false;
 }
 
 sketch.mouseDragged = function(){
@@ -721,6 +722,7 @@ sketch.mouseDragged = function(){
 
   roadsgrid[xytoi(gridmouseX, gridmouseY)] = isplacing;
   updatePaths();
+  return false;
 }
 
 sketch.windowResized = function(){
@@ -728,4 +730,8 @@ sketch.windowResized = function(){
   grainbuffer.remove();
   computeGrain();
   calculateRoadScale();
+}
+
+sketch.touchEnded = function(){
+  return false;
 }
