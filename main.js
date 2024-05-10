@@ -708,7 +708,6 @@ sketch.mousePressed = function(){
   roadsgrid[xytoi(gridmouseX, gridmouseY)] = !roadsgrid[xytoi(gridmouseX, gridmouseY)];
   isplacing = roadsgrid[xytoi(gridmouseX, gridmouseY)];
   updatePaths();
-  return false;
 }
 
 sketch.mouseDragged = function(){
@@ -722,7 +721,6 @@ sketch.mouseDragged = function(){
 
   roadsgrid[xytoi(gridmouseX, gridmouseY)] = isplacing;
   updatePaths();
-  return false;
 }
 
 sketch.windowResized = function(){
@@ -730,8 +728,4 @@ sketch.windowResized = function(){
   grainbuffer.remove();
   computeGrain();
   calculateRoadScale();
-}
-
-sketch.touchEnded = function(){
-  return false;
 }
