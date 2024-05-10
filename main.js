@@ -2,8 +2,8 @@ import { sketch } from 'p5js-wrapper';
 
 p5.disableFriendlyErrors = true;
 
-const GWIDTH = 21;
-const GHEIGHT = 21;
+const GWIDTH = 15;
+const GHEIGHT = 15;
 const HALF_GWIDTH = Math.floor(GWIDTH/2);
 const HALF_GHEIGHT = Math.floor(GHEIGHT/2);
 const GX_OFFSET = ((GWIDTH+1)%2)/2;
@@ -18,20 +18,30 @@ let intersections_coordinates = [];
 const background_color = [255, 211, 153];
 const unavailable_color = [255 * 0.9, 211 * 0.95, 153 * 0.99];
 
-let ROADSIZE, CARX, CARY;
+let ROADSIZE, CARX, CARY, LARGETEXT, SMALLTEXT, INFOWIDTH, MSGWIDTHS;
 function calculateRoadScale(){
-  ROADSIZE = Math.round(Math.min(window.innerWidth, window.innerHeight)*2/3 * 1/21 * 1/2)*2+1;
+  ROADSIZE = Math.round(Math.min(window.innerWidth, window.innerHeight)*2/3 * 1/15);
   CARX = ROADSIZE/5*0.9;
   CARY = 2*CARX;
+
+  LARGETEXT = ROADSIZE*2;
+  SMALLTEXT = ROADSIZE*0.8;
+  textSize(SMALLTEXT);
+  INFOWIDTH = textWidth("\u24D8");
+  MSGWIDTHS = [
+    textWidth("click & drag to connect houses to\nmatching destinations (white border)"),
+    textWidth("great! keep connecting,\nand get everyone on the road"),
+    textWidth("the meter on the left rates driver\nhappiness; reduce traffic & choose\nshort routes to keep it high!"),
+    textWidth("too many traffic jams!\nyou'll do even better next time!")
+  ];
 }
-calculateRoadScale();
 
 const CAR_DIESCALE = 10;
 const CURVATURE = 1/3;
 
 let buildings = [];
 const TYPES_BUILDINGS = 5;
-const BUILDINGS_COUNT = TYPES_BUILDINGS * 3;
+const BUILDINGS_COUNT = TYPES_BUILDINGS * 2;
 const BUILDING_COLORS = [[255, 102, 71], [153, 214, 131], [152, 194, 237], [205, 141, 224], [255, 160, 43]];
 
 const CARS_TIME_PER_ROADUNIT = 2*12;
@@ -104,9 +114,12 @@ sketch.setup = function(){
   maincanvas = createCanvas(windowWidth, windowHeight);
   pixelDensity(1); // make phones not insanely slow
 
-  computeGrain();
-
+  textFont('Freeman');
+  textAlign(CENTER, CENTER);
   rectMode(CENTER);
+
+  computeGrain();
+  calculateRoadScale();
 
   for(let i = 0; i < BUILDINGS_COUNT; i ++){
     for(let _ = 0; _ < 1000; _ ++){
@@ -126,10 +139,6 @@ sketch.setup = function(){
       break;
     }
   }
-
-  textFont('Freeman');
-  textAlign(CENTER, CENTER);
-  textSize(40);
 }
 
 function astarHeuristic(p1, p2){
@@ -270,11 +279,11 @@ sketch.draw = function(){
     push();
     translate(offset-50, 0);
     stroke(200);
-    strokeWeight(5);
-    line(40, height/3, 40, 2*height/3);
+    strokeWeight(ROADSIZE/5);
+    line(ROADSIZE*1.5, height/3, ROADSIZE*1.5, 2*height/3);
     const normal_dis = Math.min(DIS_NORMALIZE(average_dissatisfaction), 1);
     stroke(255 * (normal_dis+1)/2, 255 * (1-normal_dis)/2, 50);
-    line(30, height/2 + normal_dis * height/6, 50, height/2 + normal_dis * height/6);
+    line(ROADSIZE*1.5-ROADSIZE/2, height/2 + normal_dis * height/6, ROADSIZE*1.5+ROADSIZE/2, height/2 + normal_dis * height/6);
     pop();
   }
 
@@ -284,15 +293,19 @@ sketch.draw = function(){
   rect(0, 0, (GWIDTH+1)*ROADSIZE, (GHEIGHT+1)*ROADSIZE, ROADSIZE*CURVATURE);
   noStroke();
   fill(0);
-  text("traffik", 0, -height/2+40);
+  textSize(LARGETEXT);
+  text("traffik", 0, -height/2+LARGETEXT-10);
 
+  strokeWeight(1); // handle overlap
   for(let x = -HALF_GWIDTH; x < HALF_GWIDTH+GX_EXTRA; x ++){
     for(let y = -HALF_GHEIGHT; y < HALF_GHEIGHT+GX_EXTRA; y ++){
+      noStroke();
       fill(...unavailable_color);
       if(mod(x, 2) == 1 && mod(y, 2) == 1){
-        rect((x + GX_OFFSET) * ROADSIZE, (y + GY_OFFSET) * ROADSIZE, ROADSIZE, ROADSIZE, ROADSIZE*CURVATURE);
+        rect((x + GX_OFFSET) * ROADSIZE, (y + GY_OFFSET) * ROADSIZE, ROADSIZE-2, ROADSIZE-2, ROADSIZE*CURVATURE);
       }
       fill(100);
+      stroke(100);
       const physposx = (x + GX_OFFSET) * ROADSIZE,
             physposy = (y + GY_OFFSET) * ROADSIZE;
 
@@ -322,31 +335,40 @@ sketch.draw = function(){
 
         if(neighbors[0]&&neighbors[1]&&!roadsgrid[xytoi(x-1,y-1)]){
           rect(physposx - ROADSIZE/2, physposy - ROADSIZE/2, ROADSIZE*CURVATURE, ROADSIZE*CURVATURE);
+          noStroke();
           fill(...unavailable_color);
-          ellipse(physposx - ROADSIZE/2-ROADSIZE*CURVATURE/2, physposy - ROADSIZE/2-ROADSIZE*CURVATURE/2, ROADSIZE*CURVATURE, ROADSIZE*CURVATURE);
+          ellipse(physposx - ROADSIZE/2-ROADSIZE*CURVATURE/2, physposy - ROADSIZE/2-ROADSIZE*CURVATURE/2, ROADSIZE*CURVATURE-1, ROADSIZE*CURVATURE-1);
           fill(100);
+          stroke(100);
         }
         if(neighbors[1]&&neighbors[2]&&!roadsgrid[xytoi(x+1,y-1)]){
           rect(physposx + ROADSIZE/2, physposy - ROADSIZE/2, ROADSIZE*CURVATURE, ROADSIZE*CURVATURE);
+          noStroke();
           fill(...unavailable_color);
-          ellipse(physposx + ROADSIZE/2+ROADSIZE*CURVATURE/2, physposy - ROADSIZE/2-ROADSIZE*CURVATURE/2, ROADSIZE*CURVATURE, ROADSIZE*CURVATURE);
+          ellipse(physposx + ROADSIZE/2+ROADSIZE*CURVATURE/2, physposy - ROADSIZE/2-ROADSIZE*CURVATURE/2, ROADSIZE*CURVATURE-1, ROADSIZE*CURVATURE-1);
           fill(100);
+          stroke(100);
         }
         if(neighbors[2]&&neighbors[3]&&!roadsgrid[xytoi(x+1,y+1)]){
           rect(physposx + ROADSIZE/2, physposy + ROADSIZE/2, ROADSIZE*CURVATURE, ROADSIZE*CURVATURE);
+          noStroke();
           fill(...unavailable_color);
-          ellipse(physposx + ROADSIZE/2+ROADSIZE*CURVATURE/2, physposy + ROADSIZE/2+ROADSIZE*CURVATURE/2, ROADSIZE*CURVATURE, ROADSIZE*CURVATURE);
+          ellipse(physposx + ROADSIZE/2+ROADSIZE*CURVATURE/2, physposy + ROADSIZE/2+ROADSIZE*CURVATURE/2, ROADSIZE*CURVATURE-1, ROADSIZE*CURVATURE-1);
           fill(100);
+          stroke(100);
         }
         if(neighbors[3]&&neighbors[0]&&!roadsgrid[xytoi(x-1,y+1)]){
           rect(physposx - ROADSIZE/2, physposy + ROADSIZE/2, ROADSIZE*CURVATURE, ROADSIZE*CURVATURE);
+          noStroke();
           fill(...unavailable_color);
-          ellipse(physposx - ROADSIZE/2-ROADSIZE*CURVATURE/2, physposy + ROADSIZE/2+ROADSIZE*CURVATURE/2, ROADSIZE*CURVATURE, ROADSIZE*CURVATURE);
+          ellipse(physposx - ROADSIZE/2-ROADSIZE*CURVATURE/2, physposy + ROADSIZE/2+ROADSIZE*CURVATURE/2, ROADSIZE*CURVATURE-1, ROADSIZE*CURVATURE-1);
           fill(100);
+          stroke(100);
         }
       }
     }
   }
+  noStroke();
 
   // ima leave this here totally out of context just for the reference
   //  c.type_of_motion = 0; // 0 = straight, 1 = diode (deep cut)
@@ -514,7 +536,7 @@ sketch.draw = function(){
     endShape();
   }
 
-  strokeWeight(4+0.5*Math.sin(frameCount/30));
+  strokeWeight(ROADSIZE/7);
   for(let b of buildings){
     const physposx = (b.x + GX_OFFSET) * ROADSIZE,
           physposy = (b.y + GY_OFFSET) * ROADSIZE;
@@ -534,36 +556,36 @@ sketch.draw = function(){
   if(frameCount < 350 && (!has_first_car || frameCount - has_first_car < 50)){
     textAlign(LEFT, CENTER);
     let time_to_come_back = has_first_car ? has_first_car : 300;
-    let offset = -Math.sin(Math.PI * (frameCount < 50 ? frameCount : (frameCount > time_to_come_back ? frameCount - time_to_come_back + 50 : 50)) / 100) * 300;
     fill(0);
-    textSize(18);
-    text("\u24D8", width/2+offset-25, height/2 - 50);
+    textSize(SMALLTEXT);
+    let offset = -Math.sin(Math.PI * (frameCount < 50 ? frameCount : (frameCount > time_to_come_back ? frameCount - time_to_come_back + 50 : 50)) / 100) * (MSGWIDTHS[0] + 15);
+    text("\u24D8", width/2+offset-INFOWIDTH-10, height/2 - 50);
     text("click & drag to connect houses to\nmatching destinations (white border)", width/2+offset, height/2 - 50);
-    textSize(40);
+    textSize(LARGETEXT);
     textAlign(CENTER, CENTER);
   }
 
   if(has_first_car && frameCount - has_first_car < 350){
     textAlign(LEFT, CENTER);
     let fc = frameCount - has_first_car;
-    let offset = -Math.sin(Math.PI * (fc < 50 ? fc : (fc > 300 ? fc - 250 : 50)) / 100) * 245;
     fill(0);
-    textSize(18);
-    text("\u24D8", width/2+offset-25, height/2 - 50);
+    textSize(SMALLTEXT);
+    let offset = -Math.sin(Math.PI * (fc < 50 ? fc : (fc > 300 ? fc - 250 : 50)) / 100) * (MSGWIDTHS[1] + 15);
+    text("\u24D8", width/2+offset-INFOWIDTH-10, height/2 - 50);
     text("great! keep connecting,\nand get everyone on the road", width/2+offset, height/2 - 50);
-    textSize(40);
+    textSize(LARGETEXT);
     textAlign(CENTER, CENTER);
   }
 
   if(has_first_car && frameCount - has_first_car > 350 && frameCount - has_first_car < 700){
     textAlign(LEFT, CENTER);
     let fc = frameCount - has_first_car - 350;
-    let offset = -Math.sin(Math.PI * (fc < 50 ? fc : (fc > 300 ? fc - 250 : 50)) / 100) * 290;
+    let offset = -Math.sin(Math.PI * (fc < 50 ? fc : (fc > 300 ? fc - 250 : 50)) / 100) * (MSGWIDTHS[2] + 15);
     fill(0);
-    textSize(18);
-    text("\u24D8", width/2+offset-25, height/2 - 60);
+    textSize(SMALLTEXT);
+    text("\u24D8", width/2+offset-INFOWIDTH-10, height/2 - 60);
     text("the meter on the left rates driver\nhappiness; reduce traffic & choose\nshort routes to keep it high!", width/2+offset, height/2 - 60);
-    textSize(40);
+    textSize(LARGETEXT);
     textAlign(CENTER, CENTER);
   }
 
@@ -574,15 +596,15 @@ sketch.draw = function(){
     push();
     translate(width/2+offset, 0);
     fill(200);
-    rect(0, 0, 300, 200, 25, 25);
+    rect(0, ROADSIZE/2, ROADSIZE*6+MSGWIDTHS[3], LARGETEXT+SMALLTEXT+SMALLTEXT+LARGETEXT+SMALLTEXT, ROADSIZE, ROADSIZE);
     fill(0);
     textAlign(LEFT, CENTER);
-    text("oh no.", -25, -30);
-    textSize(15);
-    text("too many traffic jams!\nyou'll do even better next time!", -25, 20);
-    let mdist = Math.sqrt(Math.pow(width+offset-10 - mouseX, 2) + Math.pow(height/2+65 - mouseY, 2));
+    text("oh no.", -ROADSIZE*2.5, -LARGETEXT/2-10);
+    textSize(SMALLTEXT);
+    text("too many traffic jams!\nyou'll do even better next time!", -ROADSIZE*2.5, SMALLTEXT);
+    let mdist = Math.sqrt(Math.pow(width+offset - mouseX, 2) + Math.pow(height/2+LARGETEXT+SMALLTEXT-5 - mouseY, 2));
     textAlign(CENTER, CENTER);
-    textSize(!mouseIsPressed && mdist < 20 ? 45 : 40);
+    textSize(LARGETEXT + (!mouseIsPressed && mdist < 20 ? 5 : 0));
     if(mouseIsPressed && mdist < 20){
       frame_lost = false;
       cars = [];
@@ -591,8 +613,9 @@ sketch.draw = function(){
       intersectionsgrid = new Array(GWIDTH * GHEIGHT).fill().map(_=>false);
       intersections_coordinates = [];
     }
-    text("\u21BA", 0, 65);
-    translate(-105, 0);
+    text("\u21BA", 0, LARGETEXT+SMALLTEXT-5);
+    translate(-ROADSIZE*6, 0);
+    scale(ROADSIZE/25);
     fill(120, 131, 138);
     beginShape();
     vertex(16, -36);
